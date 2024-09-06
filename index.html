@@ -10,7 +10,7 @@
         .product-image {
             width: 100%;
             height: 200px;
-            object-fit: cover;
+            object-fit: contain;
         }
         .nav-link {
             cursor: pointer;
@@ -27,16 +27,24 @@
                 flex: 0 0 auto;
                 width: 50%;
             }
+            .button-container {
+                text-align: center;
+            }
+            .button-container .btn {
+                margin-bottom: 10px;
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container-fluid mt-4">
         <div class="row mb-4 align-items-center">
-            <div class="col-md-6">
+            <div class="col-12 text-center">
                 <h1>在地人團購－現貨查詢表</h1>
             </div>
-            <div class="col-md-6 text-end">
+            <div class="col-12 button-container mt-3">
+                <a href="https://m.me/114386805053655?ref=157493319733" class="btn btn-success me-2" target="_blank">我要私訊預訂</a>
                 <button id="refreshButton" class="btn btn-primary">重新整理取得最新數據</button>
             </div>
         </div>
@@ -65,7 +73,7 @@
 
         // 處理圖片 URL
         function getImageUrl(url) {
-            if (!url) return '/api/placeholder/400/400';
+            if (!url) return null;
             
             let fileId = extractFileId(url);
             if (fileId) {
@@ -171,16 +179,20 @@
             const container = document.getElementById('productContainer');
             container.innerHTML = '';
             products.forEach(product => {
+                const imageUrl = getImageUrl(product.imageUrl);
                 const productHtml = `
                     <div class="col-md-4 col-6 mb-4">
                         <div class="card">
-                            <img src="${getImageUrl(product.imageUrl)}" class="card-img-top product-image" alt="${product.name}" onerror="this.src='/api/placeholder/400/400';">
+                            ${imageUrl ? 
+                                `<img src="${imageUrl}" class="card-img-top product-image" alt="${product.name}" onerror="this.onerror=null; this.src='/api/placeholder/400/400'; this.alt='圖片載入失敗';">` : 
+                                `<div class="card-img-top product-image d-flex align-items-center justify-content-center bg-light">沒有圖片</div>`
+                            }
                             <div class="card-body">
                                 <h5 class="card-title">${product.name}</h5>
                                 <p class="card-text">
                                     $${product.price} | 庫存: <span class="stock-number">${product.quantity}</span>
                                 </p>
-                                <a href="${getDetailLink(product.driveLink)}" class="btn btn-primary" target="_blank">點我看圖</a>
+                                ${product.driveLink ? `<a href="${getDetailLink(product.driveLink)}" class="btn btn-primary" target="_blank">點我看圖</a>` : ''}
                             </div>
                         </div>
                     </div>
