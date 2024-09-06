@@ -19,12 +19,12 @@
 </head>
 <body>
     <div class="container-fluid mt-4">
-        <div class="row mb-4">
+        <div class="row mb-4 align-items-center">
             <div class="col-md-6">
                 <h1>在地人團購－現貨查詢表</h1>
             </div>
-            <div class="col-md-6">
-                <input type="text" id="globalSearch" class="form-control" placeholder="全站搜尋">
+            <div class="col-md-6 text-end">
+                <button id="refreshButton" class="btn btn-primary">重新整理取得最新數據</button>
             </div>
         </div>
         <ul class="nav nav-tabs" id="sheetTabs">
@@ -43,16 +43,29 @@
     <script>
         const sheetId = '1otQJRi_YT5TUyWSwVdcO_k6qQ99Cgg9ngVzLRI9pVwo';
         const apiKey = 'AIzaSyDPkSAu7kurckNYvFBSkIdep27tITS4Pok';
-        let allProducts = [];
+        let currentSheet = '';
+        let allProducts = {};
 
-        // 處理 Google Drive 圖片 URL
+        // 處理圖片 URL
         function getImageUrl(url) {
+            if (!url) return '/api/placeholder/400/400';
+            
+            // 處理 Google Drive 圖片
             if (url.includes('drive.google.com')) {
                 const fileId = url.match(/[-\w]{25,}/);
                 if (fileId) {
-                    return `https://drive.google.com/thumbnail?id=${fileId[0]}&sz=w300-h300`;
+                    return `https://drive.google.com/uc?export=view&id=${fileId[0]}`;
                 }
             }
+            
+            // 處理 Google Sheets 中的圖片公式
+            if (url.startsWith('=IMAGE(')) {
+                const imageUrl = url.match(/"(.*?)"/);
+                if (imageUrl && imageUrl[1]) {
+                    return imageUrl[1];
+                }
+            }
+            
             return url;
         }
 
@@ -62,6 +75,7 @@
                 .then(response => response.json())
                 .then(data => {
                     const tabsContainer = document.getElementById('sheetTabs');
+                    tabsContainer.innerHTML = ''; // 清空現有標籤
                     data.sheets.forEach((sheet, index) => {
                         const li = document.createElement('li');
                         li.className = 'nav-item';
@@ -74,42 +88,42 @@
                         tab.addEventListener('click', (e) => {
                             document.querySelectorAll('#sheetTabs .nav-link').forEach(t => t.classList.remove('active'));
                             e.target.classList.add('active');
-                            loadProducts(e.target.getAttribute('data-sheet'));
+                            currentSheet = e.target.getAttribute('data-sheet');
+                            loadProducts(currentSheet);
                         });
                     });
 
-                    // 加載所有工作表的產品
-                    Promise.all(data.sheets.map(sheet => loadProducts(sheet.properties.title, true)))
-                        .then(() => {
-                            // 初始顯示第一個工作表的產品
-                            displayProducts(allProducts.filter(p => p.sheet === data.sheets[0].properties.title));
-                        });
+                    // 加載第一個工作表的產品
+                    if (data.sheets.length > 0) {
+                        currentSheet = data.sheets[0].properties.title;
+                        loadProducts(currentSheet);
+                    }
                 })
                 .catch(error => console.error('Error loading sheets:', error));
         }
 
         // 加載商品
-        function loadProducts(sheetName, loadAll = false) {
-            return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A:E?key=${apiKey}`)
+        function loadProducts(sheetName) {
+            fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A:E?key=${apiKey}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.values && data.values.length > 1) {
                         const products = data.values.slice(1).map(row => {
                             const [imageUrl, name, price, quantity, driveLink] = row;
-                            return { sheet: sheetName, imageUrl, name, price, quantity, driveLink };
+                            return { imageUrl, name, price, quantity, driveLink };
                         });
 
-                        if (loadAll) {
-                            allProducts = allProducts.concat(products);
-                        } else {
-                            displayProducts(products);
-                        }
+                        allProducts[sheetName] = products;
+                        displayProducts(products);
 
                         // 更新標籤上的商品數量
                         const tab = document.querySelector(`#sheetTabs .nav-link[data-sheet="${sheetName}"]`);
                         if (tab) {
                             tab.textContent = `${sheetName} (${products.length})`;
                         }
+                    } else {
+                        allProducts[sheetName] = [];
+                        displayProducts([]);
                     }
                 })
                 .catch(error => console.error('Error loading products:', error));
@@ -148,18 +162,15 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadSheets();
 
-            // 全站搜尋
-            document.getElementById('globalSearch').addEventListener('input', (e) => {
-                const searchTerm = e.target.value;
-                const filteredProducts = searchProducts(searchTerm, allProducts);
-                displayProducts(filteredProducts);
+            // 重新整理按鈕
+            document.getElementById('refreshButton').addEventListener('click', () => {
+                loadSheets();
             });
 
             // 工作表內搜尋
             document.getElementById('sheetSearch').addEventListener('input', (e) => {
                 const searchTerm = e.target.value;
-                const activeSheet = document.querySelector('#sheetTabs .nav-link.active').getAttribute('data-sheet');
-                const filteredProducts = searchProducts(searchTerm, allProducts.filter(p => p.sheet === activeSheet));
+                const filteredProducts = searchProducts(searchTerm, allProducts[currentSheet] || []);
                 displayProducts(filteredProducts);
             });
         });
