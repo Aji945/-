@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
     <style>
         body {
-            padding-top: 190px; /* 調整這個值以匹配您的固定頭部的高度 */
+            padding-top: 200px; /* 調整這個值以匹配您的固定頭部的高度 */
         }
         .fixed-top-custom {
             position: fixed;
@@ -26,6 +26,10 @@
         }
         .nav-link {
             cursor: pointer;
+        }
+        .nav-link.active {
+            background-color: #007bff;
+            color: white !important;
         }
         .stock-number {
             font-size: 1.2em;
@@ -133,6 +137,7 @@
                                 currentSheet = e.target.getAttribute('data-sheet');
                                 displayProducts(allProducts[currentSheet]);
                                 clearSearch();
+                                window.scrollTo(0, 0);
                             });
                         });
 
@@ -200,6 +205,7 @@
                 container.innerHTML += productHtml;
             });
             updateSearchUI(document.getElementById('sheetSearch').value);
+            window.scrollTo(0, 0);
         }
 
         // 搜尋功能
@@ -213,6 +219,7 @@
             );
             displayProducts(filtered);
             updateSearchUI(searchTerm, filtered.length);
+            window.scrollTo(0, 0);
         }
 
         // 更新搜尋UI
@@ -234,6 +241,7 @@
             document.getElementById('sheetSearch').value = '';
             displayProducts(allProducts[currentSheet] || []);
             updateSearchUI('');
+            window.scrollTo(0, 0);
         }
 
         // 初始化
