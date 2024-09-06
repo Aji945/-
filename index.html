@@ -135,10 +135,21 @@
                     fileId = url.split('/open?id=')[1].split('&')[0];
                 } else if (url.includes('/file/d/')) {
                     fileId = url.split('/file/d/')[1].split('/')[0];
+                } else if (url.includes('/folders/')) {
+                    fileId = url.split('/folders/')[1].split('?')[0];
                 }
                 return fileId;
             }
             return null;
+        }
+
+        // 處理詳情鏈接
+        function getDetailLink(url) {
+            let fileId = extractFileId(url);
+            if (fileId) {
+                return `https://drive.google.com/drive/folders/${fileId}?usp=sharing`;
+            }
+            return url;
         }
 
         // 加載所有工作表
@@ -252,7 +263,7 @@
                                     $${product.price} | 庫存: <span class="stock-number">${product.stock}</span>
                                 </p>
                                 <div class="d-flex justify-content-between">
-                                    ${product.detailLink ? `<a href="${product.detailLink}" class="btn btn-primary btn-sm" target="_blank">看圖</a>` : ''}
+                                    ${product.detailLink ? `<a href="${getDetailLink(product.detailLink)}" class="btn btn-primary btn-sm" target="_blank">看圖</a>` : ''}
                                     ${product.originalPostLink ? `<a href="${product.originalPostLink}" class="btn btn-secondary btn-sm" target="_blank">原始貼文</a>` : ''}
                                 </div>
                             </div>
