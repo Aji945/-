@@ -46,7 +46,7 @@
         <div class="row mt-3 align-items-center">
             <div class="col-md-4">
                 <div class="input-group">
-                    <input type="text" id="sheetSearch" class="form-control" placeholder="搜尋當前工作表">
+                    <input type="text" id="sheetSearch" class="form-control" placeholder="搜尋當前類別商品">
                     <span class="input-group-text" id="searchResult">0 結果</span>
                     <button class="btn btn-outline-secondary" type="button" id="clearSearch">清除搜尋</button>
                 </div>
@@ -114,8 +114,7 @@
                                 e.target.classList.add('active');
                                 currentSheet = e.target.getAttribute('data-sheet');
                                 displayProducts(allProducts[currentSheet]);
-                                document.getElementById('sheetSearch').value = '';
-                                updateSearchUI('');
+                                clearSearch();
                             });
                         });
 
@@ -175,7 +174,7 @@
                                 <p class="card-text">
                                     $${product.price} | 庫存: <span class="stock-number">${product.quantity}</span>
                                 </p>
-                                <a href="${getDetailLink(product.driveLink)}" class="btn btn-primary" target="_blank">查看詳情</a>
+                                <a href="${getDetailLink(product.driveLink)}" class="btn btn-primary" target="_blank">點我看圖</a>
                             </div>
                         </div>
                     </div>
@@ -212,11 +211,21 @@
             }
         }
 
+        // 清除搜尋
+        function clearSearch() {
+            document.getElementById('sheetSearch').value = '';
+            displayProducts(allProducts[currentSheet] || []);
+            updateSearchUI('');
+        }
+
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
             loadAllSheets();
 
-            document.getElementById('refreshButton').addEventListener('click', loadAllSheets);
+            document.getElementById('refreshButton').addEventListener('click', () => {
+                loadAllSheets();
+                clearSearch();
+            });
 
             const sheetSearch = document.getElementById('sheetSearch');
             sheetSearch.addEventListener('input', (e) => {
@@ -224,11 +233,7 @@
                 searchProducts(searchTerm, allProducts[currentSheet] || []);
             });
 
-            document.getElementById('clearSearch').addEventListener('click', () => {
-                sheetSearch.value = '';
-                displayProducts(allProducts[currentSheet] || []);
-                updateSearchUI('');
-            });
+            document.getElementById('clearSearch').addEventListener('click', clearSearch);
         });
     </script>
 </body>
