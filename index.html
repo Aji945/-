@@ -80,6 +80,51 @@
             display: none;
             margin-right: 10px;
         }
+        .tabs-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        .tabs-wrapper {
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            position: relative;
+        }
+        .tabs-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+        #sheetTabs {
+            display: inline-flex;
+            flex-wrap: nowrap;
+        }
+        .nav-item {
+            flex: 0 0 auto;
+        }
+        .scroll-indicator {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 30px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.8);
+            font-size: 24px;
+            color: #0d6efd;
+            z-index: 1;
+            cursor: pointer;
+        }
+        .scroll-indicator.left {
+            left: 0;
+        }
+        .scroll-indicator.right {
+            right: 0;
+        }
+        .scroll-indicator:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
     </style>
 </head>
 <body>
@@ -93,9 +138,15 @@
                 <button id="refreshButton" class="btn btn-primary">更新數據</button>
             </div>
         </div>
-        <ul class="nav nav-tabs" id="sheetTabs">
-            <!-- 工作表標籤將在這裡動態加載 -->
-        </ul>
+        <div class="tabs-container">
+            <div class="scroll-indicator left"><i class="fas fa-chevron-left"></i></div>
+            <div class="tabs-wrapper">
+                <ul class="nav nav-tabs" id="sheetTabs">
+                    <!-- 工作表標籤將在這裡動態加載 -->
+                </ul>
+            </div>
+            <div class="scroll-indicator right"><i class="fas fa-chevron-right"></i></div>
+        </div>
         <div class="search-container mt-3">
             <input type="text" id="searchInput" class="form-control" placeholder="搜尋當前類別商品...">
             <span id="searchResult"></span>
@@ -115,7 +166,6 @@
         let allProducts = {};
         let currentSearchTerm = '';
 
-        // 處理圖片 URL
         function getImageUrl(url) {
             if (!url) return null;
             
@@ -127,7 +177,6 @@
             return url;
         }
 
-        // 從 URL 中提取 Google Drive 文件 ID
         function extractFileId(url) {
             if (url && url.includes('drive.google.com')) {
                 let fileId;
@@ -143,7 +192,6 @@
             return null;
         }
 
-        // 處理詳情鏈接
         function getDetailLink(url) {
             let fileId = extractFileId(url);
             if (fileId) {
@@ -152,9 +200,8 @@
             return url;
         }
 
-        // 加載所有工作表
         function loadAllSheets() {
-            fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?key=${apiKey}`)
+            return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?key=${apiKey}`)
                 .then(response => response.json())
                 .then(data => {
                     const tabsContainer = document.getElementById('sheetTabs');
@@ -167,7 +214,7 @@
                         return loadProducts(sheet.properties.title, true);
                     });
 
-                    Promise.all(sheetPromises).then(() => {
+                    return Promise.all(sheetPromises).then(() => {
                         document.querySelectorAll('#sheetTabs .nav-link').forEach(tab => {
                             tab.addEventListener('click', (e) => {
                                 document.querySelectorAll('#sheetTabs .nav-link').forEach(t => t.classList.remove('active'));
@@ -192,7 +239,6 @@
                 .catch(error => console.error('Error loading sheets:', error));
         }
 
-        // 加載商品
         function loadProducts(sheetName, updateTabOnly = false) {
             return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A:H?key=${apiKey}`)
                 .then(response => response.json())
@@ -232,7 +278,6 @@
                 .catch(error => console.error('Error loading products:', error));
         }
 
-        // 顯示商品
         function displayProducts(products) {
             const container = document.getElementById('productContainer');
             container.innerHTML = '';
@@ -275,7 +320,6 @@
             updateSearchResult(filteredProducts.length);
         }
 
-        // 更新搜尋結果
         function updateSearchResult(count) {
             const searchResult = document.getElementById('searchResult');
             if (currentSearchTerm) {
@@ -286,28 +330,45 @@
             }
         }
 
-        // 搜尋功能
         function searchProducts() {
             currentSearchTerm = document.getElementById('searchInput').value;
             displayProducts(allProducts[currentSheet]);
         }
 
-        // 清除搜尋
         function clearSearch() {
             document.getElementById('searchInput').value = '';
             currentSearchTerm = '';
             displayProducts(allProducts[currentSheet]);
         }
 
-        // 回到頂部功能
         function topFunction() {
-            document.body.scrollTop = 0; // For Safari
-            document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
         }
 
-        // 初始化
+        function updateScrollIndicators() {
+            const tabsWrapper = document.querySelector('.tabs-wrapper');
+            const leftIndicator = document.querySelector('.scroll-indicator.left');
+            const rightIndicator = document.querySelector('.scroll-indicator.right');
+            leftIndicator.style.display = tabsWrapper.scrollLeft > 0 ? 'flex' : 'none';
+            rightIndicator.style.display = 
+                tabsWrapper.scrollLeft < (tabsWrapper.scrollWidth - tabsWrapper.clientWidth) ? 'flex' : 'none';
+        }
+
+        function scrollTabs(direction) {
+            const tabsWrapper = document.querySelector('.tabs-wrapper');
+            const scrollAmount = tabsWrapper.clientWidth / 2;
+            if (direction === 'left') {
+                tabsWrapper.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            } else {
+                tabsWrapper.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            loadAllSheets();
+            loadAllSheets().then(() => {
+                updateScrollIndicators();
+            });
 
             document.getElementById('refreshButton').addEventListener('click', () => {
                 const activeTab = document.querySelector('#sheetTabs .nav-link.active');
@@ -318,6 +379,12 @@
             document.getElementById('searchInput').addEventListener('input', searchProducts);
             document.getElementById('clearSearch').addEventListener('click', clearSearch);
             document.getElementById('backToTop').addEventListener('click', topFunction);
+
+            // 新增的商品類別相關事件監聽器
+            document.querySelector('.scroll-indicator.left').addEventListener('click', () => scrollTabs('left'));
+            document.querySelector('.scroll-indicator.right').addEventListener('click', () => scrollTabs('right'));
+            document.querySelector('.tabs-wrapper').addEventListener('scroll', updateScrollIndicators);
+            window.addEventListener('resize', updateScrollIndicators);
         });
     </script>
 </body>
