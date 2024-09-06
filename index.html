@@ -209,7 +209,7 @@
                     const sheetPromises = data.sheets.map((sheet, index) => {
                         const li = document.createElement('li');
                         li.className = 'nav-item';
-                        li.innerHTML = `<a class="nav-link" data-sheet="${sheet.properties.title}">${sheet.properties.title} (載入中...)</a>`;
+                        li.innerHTML = `<a class="nav-link" data-sheet="${sheet.properties.title}">${sheet.properties.title} (準備中...)</a>`;
                         tabsContainer.appendChild(li);
                         return loadProducts(sheet.properties.title, true);
                     });
