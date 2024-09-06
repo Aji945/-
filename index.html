@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在地人團購－現貨查詢表</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .nav-link {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h1>在地人團購－現貨查詢表</h1>
+            </div>
+            <div class="col-md-6">
+                <input type="text" id="globalSearch" class="form-control" placeholder="全站搜尋">
+            </div>
+        </div>
+        <ul class="nav nav-tabs" id="sheetTabs">
+            <!-- 工作表標籤將在這裡動態加載 -->
+        </ul>
+        <div class="row mt-3">
+            <div class="col-12">
+                <input type="text" id="sheetSearch" class="form-control" placeholder="搜尋當前工作表">
+            </div>
+        </div>
+        <div id="productContainer" class="row mt-4">
+            <!-- 商品將在這裡動態加載 -->
+        </div>
+    </div>
+
+    <script>
+        const sheetId = '1otQJRi_YT5TUyWSwVdcO_k6qQ99Cgg9ngVzLRI9pVwo';
+        const apiKey = 'AIzaSyDPkSAu7kurckNYvFBSkIdep27tITS4Pok';
+        let allProducts = [];
+
+        // 處理 Google Drive 圖片 URL
+        function getImageUrl(url) {
+            if (url.includes('drive.google.com')) {
+                const fileId = url.match(/[-\w]{25,}/);
+                if (fileId) {
+                    return `https://drive.google.com/thumbnail?id=${fileId[0]}&sz=w300-h300`;
+                }
+            }
+            return url;
+        }
+
+        // 加載工作表
+        function loadSheets() {
+            fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?key=${apiKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tabsContainer = document.getElementById('sheetTabs');
+                    data.sheets.forEach((sheet, index) => {
+                        const li = document.createElement('li');
+                        li.className = 'nav-item';
+                        li.innerHTML = `<a class="nav-link ${index === 0 ? 'active' : ''}" data-sheet="${sheet.properties.title}">${sheet.properties.title} (0)</a>`;
+                        tabsContainer.appendChild(li);
+                    });
+
+                    // 為每個標籤添加點擊事件
+                    document.querySelectorAll('#sheetTabs .nav-link').forEach(tab => {
+                        tab.addEventListener('click', (e) => {
+                            document.querySelectorAll('#sheetTabs .nav-link').forEach(t => t.classList.remove('active'));
+                            e.target.classList.add('active');
+                            loadProducts(e.target.getAttribute('data-sheet'));
+                        });
+                    });
+
+                    // 加載所有工作表的產品
+                    Promise.all(data.sheets.map(sheet => loadProducts(sheet.properties.title, true)))
+                        .then(() => {
+                            // 初始顯示第一個工作表的產品
+                            displayProducts(allProducts.filter(p => p.sheet === data.sheets[0].properties.title));
+                        });
+                })
+                .catch(error => console.error('Error loading sheets:', error));
+        }
+
+        // 加載商品
+        function loadProducts(sheetName, loadAll = false) {
+            return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A:E?key=${apiKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.values && data.values.length > 1) {
+                        const products = data.values.slice(1).map(row => {
+                            const [imageUrl, name, price, quantity, driveLink] = row;
+                            return { sheet: sheetName, imageUrl, name, price, quantity, driveLink };
+                        });
+
+                        if (loadAll) {
+                            allProducts = allProducts.concat(products);
+                        } else {
+                            displayProducts(products);
+                        }
+
+                        // 更新標籤上的商品數量
+                        const tab = document.querySelector(`#sheetTabs .nav-link[data-sheet="${sheetName}"]`);
+                        if (tab) {
+                            tab.textContent = `${sheetName} (${products.length})`;
+                        }
+                    }
+                })
+                .catch(error => console.error('Error loading products:', error));
+        }
+
+        // 顯示商品
+        function displayProducts(products) {
+            const container = document.getElementById('productContainer');
+            container.innerHTML = '';
+            products.forEach(product => {
+                const productHtml = `
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <img src="${getImageUrl(product.imageUrl)}" class="card-img-top product-image" alt="${product.name}" onerror="this.src='/api/placeholder/400/400';">
+                            <div class="card-body">
+                                <h5 class="card-title">${product.name}</h5>
+                                <p class="card-text">價格: $${product.price}</p>
+                                <p class="card-text">庫存: ${product.quantity}</p>
+                                <a href="${getImageUrl(product.driveLink)}" class="btn btn-primary" target="_blank">查看詳情</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += productHtml;
+            });
+        }
+
+        // 搜尋功能
+        function searchProducts(searchTerm, products) {
+            return products.filter(product => 
+                product.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSheets();
+
+            // 全站搜尋
+            document.getElementById('globalSearch').addEventListener('input', (e) => {
+                const searchTerm = e.target.value;
+                const filteredProducts = searchProducts(searchTerm, allProducts);
+                displayProducts(filteredProducts);
+            });
+
+            // 工作表內搜尋
+            document.getElementById('sheetSearch').addEventListener('input', (e) => {
+                const searchTerm = e.target.value;
+                const activeSheet = document.querySelector('#sheetTabs .nav-link.active').getAttribute('data-sheet');
+                const filteredProducts = searchProducts(searchTerm, allProducts.filter(p => p.sheet === activeSheet));
+                displayProducts(filteredProducts);
+            });
+        });
+    </script>
+</body>
+</html>
