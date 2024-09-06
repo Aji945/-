@@ -18,8 +18,8 @@
         }
         .nav-link.active {
             font-weight: bold;
-            background-color: #f8f9fa;
-            border-bottom: 3px solid #0d6efd;
+            background-color: #007bff;
+            color: white !important;
         }
         .stock-number {
             font-size: 1.2em;
@@ -41,7 +41,7 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            display: none;
+            display: block;
             z-index: 99;
             font-size: 18px;
             border: none;
@@ -54,6 +54,10 @@
         }
         #backToTop:hover {
             background-color: #0b5ed7;
+        }
+        .product-details {
+            font-size: 0.9em;
+            color: #6c757d;
         }
         @media (max-width: 767px) {
             .col-6 {
@@ -71,7 +75,7 @@
             </div>
             <div class="col-12 button-container mt-3">
                 <a href="https://m.me/114386805053655?ref=157493319733" class="btn btn-success" target="_blank">我要私訊預訂</a>
-                <button id="refreshButton" class="btn btn-primary">重新整理取得最新數據</button>
+                <button id="refreshButton" class="btn btn-primary">更新數據</button>
             </div>
         </div>
         <ul class="nav nav-tabs" id="sheetTabs">
@@ -171,15 +175,15 @@
 
         // 加載商品
         function loadProducts(sheetName, updateTabOnly = false) {
-            return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A:E?key=${apiKey}`)
+            return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A:H?key=${apiKey}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.values && data.values.length > 1) {
                         const products = data.values.slice(1)
-                            .filter(row => row.length >= 5 && row[1].trim() !== '')
+                            .filter(row => row.length >= 8 && row[0].trim() !== '')
                             .map(row => {
-                                const [imageUrl, name, price, quantity, driveLink] = row;
-                                return { imageUrl, name, price, quantity, driveLink };
+                                const [name, spec, option, price, quantity, imageUrl, detailLink, originalPost] = row;
+                                return { name, spec, option, price, quantity, imageUrl, detailLink, originalPost };
                             });
 
                         allProducts[sheetName] = products;
@@ -217,10 +221,17 @@
                             }
                             <div class="card-body">
                                 <h5 class="card-title">${product.name}</h5>
+                                <p class="product-details">
+                                    規格: ${product.spec || '無'}<br>
+                                    選項: ${product.option || '無'}
+                                </p>
                                 <p class="card-text">
                                     $${product.price} | 庫存: <span class="stock-number">${product.quantity}</span>
                                 </p>
-                                ${product.driveLink ? `<a href="${getDetailLink(product.driveLink)}" class="btn btn-primary" target="_blank">點我看圖</a>` : ''}
+                                <div class="d-flex justify-content-between">
+                                    ${product.detailLink ? `<a href="${getDetailLink(product.detailLink)}" class="btn btn-primary btn-sm" target="_blank">點我看圖</a>` : ''}
+                                    ${product.originalPost ? `<a href="${product.originalPost}" class="btn btn-secondary btn-sm" target="_blank">原始貼文</a>` : ''}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -237,7 +248,9 @@
                 return;
             }
             const filtered = products.filter(product => 
-                product.name.toLowerCase().includes(searchTerm.toLowerCase())
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.spec.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.option.toLowerCase().includes(searchTerm.toLowerCase())
             );
             displayProducts(filtered);
             updateSearchUI(searchTerm, filtered.length);
