@@ -19,6 +19,15 @@
             font-size: 1.2em;
             font-weight: bold;
         }
+        #searchResult, #clearSearch {
+            display: none;
+        }
+        @media (max-width: 767px) {
+            .col-6 {
+                flex: 0 0 auto;
+                width: 50%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -39,6 +48,7 @@
                 <div class="input-group">
                     <input type="text" id="sheetSearch" class="form-control" placeholder="搜尋當前工作表">
                     <span class="input-group-text" id="searchResult">0 結果</span>
+                    <button class="btn btn-outline-secondary" type="button" id="clearSearch">清除搜尋</button>
                 </div>
             </div>
         </div>
@@ -57,28 +67,20 @@
         function getImageUrl(url) {
             if (!url) return '/api/placeholder/400/400';
             
-            // 處理新的 Google Drive 圖片 URL 格式
+            // 處理 Google Drive 圖片 URL 格式
             if (url.includes('drive.google.com/open?id=')) {
                 const fileId = url.split('id=')[1].split('&')[0];
                 return `https://drive.google.com/uc?export=view&id=${fileId}`;
             }
             
-            // 處理舊的 Google Drive 圖片 URL 格式
-            if (url.includes('drive.google.com/file/d/')) {
-                const fileId = url.match(/\/d\/(.*?)\//);
-                if (fileId && fileId[1]) {
-                    return `https://drive.google.com/uc?export=view&id=${fileId[1]}`;
-                }
+            return url;
+        }
+
+        // 處理詳情鏈接
+        function getDetailLink(url) {
+            if (url.includes('drive.google.com/open?id=')) {
+                return url.replace('open?', 'drive/folders/');
             }
-            
-            // 處理 Google Sheets 中的圖片公式
-            if (url.startsWith('=IMAGE(')) {
-                const imageUrl = url.match(/"(.*?)"/);
-                if (imageUrl && imageUrl[1]) {
-                    return imageUrl[1];
-                }
-            }
-            
             return url;
         }
 
@@ -88,7 +90,7 @@
                 .then(response => response.json())
                 .then(data => {
                     const tabsContainer = document.getElementById('sheetTabs');
-                    tabsContainer.innerHTML = ''; // 清空現有標籤
+                    tabsContainer.innerHTML = '';
                     const sheetPromises = data.sheets.map((sheet, index) => {
                         const li = document.createElement('li');
                         li.className = 'nav-item';
@@ -98,17 +100,17 @@
                     });
 
                     Promise.all(sheetPromises).then(() => {
-                        // 為每個標籤添加點擊事件
                         document.querySelectorAll('#sheetTabs .nav-link').forEach(tab => {
                             tab.addEventListener('click', (e) => {
                                 document.querySelectorAll('#sheetTabs .nav-link').forEach(t => t.classList.remove('active'));
                                 e.target.classList.add('active');
                                 currentSheet = e.target.getAttribute('data-sheet');
                                 displayProducts(allProducts[currentSheet]);
+                                document.getElementById('sheetSearch').value = '';
+                                updateSearchUI('');
                             });
                         });
 
-                        // 顯示第一個工作表的產品
                         if (data.sheets.length > 0) {
                             currentSheet = data.sheets[0].properties.title;
                             displayProducts(allProducts[currentSheet]);
@@ -125,7 +127,7 @@
                 .then(data => {
                     if (data.values && data.values.length > 1) {
                         const products = data.values.slice(1)
-                            .filter(row => row.length >= 5 && row[1].trim() !== '') // 過濾掉空行
+                            .filter(row => row.length >= 5 && row[1].trim() !== '')
                             .map(row => {
                                 const [imageUrl, name, price, quantity, driveLink] = row;
                                 return { imageUrl, name, price, quantity, driveLink };
@@ -133,7 +135,6 @@
 
                         allProducts[sheetName] = products;
 
-                        // 更新標籤上的商品數量
                         const tab = document.querySelector(`#sheetTabs .nav-link[data-sheet="${sheetName}"]`);
                         if (tab) {
                             tab.textContent = `${sheetName} (${products.length})`;
@@ -158,7 +159,7 @@
             container.innerHTML = '';
             products.forEach(product => {
                 const productHtml = `
-                    <div class="col-md-4 mb-4">
+                    <div class="col-md-4 col-6 mb-4">
                         <div class="card">
                             <img src="${getImageUrl(product.imageUrl)}" class="card-img-top product-image" alt="${product.name}" onerror="this.src='/api/placeholder/400/400';">
                             <div class="card-body">
@@ -166,41 +167,59 @@
                                 <p class="card-text">
                                     價格: $${product.price} | 庫存: <span class="stock-number">${product.quantity}</span>
                                 </p>
-                                <a href="${getImageUrl(product.driveLink)}" class="btn btn-primary" target="_blank">查看詳情</a>
+                                <a href="${getDetailLink(product.driveLink)}" class="btn btn-primary" target="_blank">查看詳情</a>
                             </div>
                         </div>
                     </div>
                 `;
                 container.innerHTML += productHtml;
             });
-            updateSearchResult(products.length);
+            updateSearchUI(document.getElementById('sheetSearch').value);
         }
 
         // 搜尋功能
         function searchProducts(searchTerm, products) {
+            if (!searchTerm) {
+                displayProducts(products);
+                return;
+            }
             const filtered = products.filter(product => 
                 product.name.toLowerCase().includes(searchTerm.toLowerCase())
             );
             displayProducts(filtered);
-            updateSearchResult(filtered.length);
+            updateSearchUI(searchTerm, filtered.length);
         }
 
-        // 更新搜尋結果數量
-        function updateSearchResult(count) {
-            document.getElementById('searchResult').textContent = `${count} 結果`;
+        // 更新搜尋UI
+        function updateSearchUI(searchTerm, resultCount) {
+            const searchResult = document.getElementById('searchResult');
+            const clearSearch = document.getElementById('clearSearch');
+            if (searchTerm) {
+                searchResult.style.display = 'inline-block';
+                searchResult.textContent = `${resultCount} 結果`;
+                clearSearch.style.display = 'inline-block';
+            } else {
+                searchResult.style.display = 'none';
+                clearSearch.style.display = 'none';
+            }
         }
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
             loadAllSheets();
 
-            // 重新整理按鈕
             document.getElementById('refreshButton').addEventListener('click', loadAllSheets);
 
-            // 工作表內搜尋
-            document.getElementById('sheetSearch').addEventListener('input', (e) => {
+            const sheetSearch = document.getElementById('sheetSearch');
+            sheetSearch.addEventListener('input', (e) => {
                 const searchTerm = e.target.value;
                 searchProducts(searchTerm, allProducts[currentSheet] || []);
+            });
+
+            document.getElementById('clearSearch').addEventListener('click', () => {
+                sheetSearch.value = '';
+                displayProducts(allProducts[currentSheet] || []);
+                updateSearchUI('');
             });
         });
     </script>
