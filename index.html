@@ -18,7 +18,7 @@
         }
         .nav-link.active {
             font-weight: bold;
-            background-color: #007bff;
+            background-color: #0d6efd;
             color: white !important;
         }
         .stock-number {
@@ -54,10 +54,6 @@
         }
         #backToTop:hover {
             background-color: #0b5ed7;
-        }
-        .product-details {
-            font-size: 0.9em;
-            color: #6c757d;
         }
         @media (max-width: 767px) {
             .col-6 {
@@ -221,11 +217,9 @@
                             }
                             <div class="card-body">
                                 <h5 class="card-title">${product.name}</h5>
-                                <p class="product-details">
-                                    規格: ${product.spec || '無'}<br>
-                                    選項: ${product.option || '無'}
-                                </p>
                                 <p class="card-text">
+                                    ${product.spec ? `規格: ${product.spec}<br>` : ''}
+                                    ${product.option ? `選項: ${product.option}<br>` : ''}
                                     $${product.price} | 庫存: <span class="stock-number">${product.quantity}</span>
                                 </p>
                                 <div class="d-flex justify-content-between">
@@ -248,9 +242,7 @@
                 return;
             }
             const filtered = products.filter(product => 
-                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.spec.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.option.toLowerCase().includes(searchTerm.toLowerCase())
+                product.name.toLowerCase().includes(searchTerm.toLowerCase())
             );
             displayProducts(filtered);
             updateSearchUI(searchTerm, filtered.length);
@@ -298,7 +290,14 @@
             loadAllSheets();
 
             document.getElementById('refreshButton').addEventListener('click', () => {
-                loadAllSheets();
+                const currentActiveSheet = document.querySelector('#sheetTabs .nav-link.active').getAttribute('data-sheet');
+                loadAllSheets().then(() => {
+                    // 重新選中之前的類別
+                    const tabToActivate = document.querySelector(`#sheetTabs .nav-link[data-sheet="${currentActiveSheet}"]`);
+                    if (tabToActivate) {
+                        tabToActivate.click();
+                    }
+                });
                 clearSearch();
             });
 
