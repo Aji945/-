@@ -61,6 +61,25 @@
             color: #6c757d;
             font-size: 1.2em;
         }
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .search-container input {
+            width: 50%;
+            margin-right: 10px;
+        }
+        .search-container .btn {
+            white-space: nowrap;
+        }
+        .card-body p {
+            margin-bottom: 0.5rem;
+        }
+        #searchResult {
+            display: none;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -77,6 +96,11 @@
         <ul class="nav nav-tabs" id="sheetTabs">
             <!-- 工作表標籤將在這裡動態加載 -->
         </ul>
+        <div class="search-container mt-3">
+            <input type="text" id="searchInput" class="form-control" placeholder="搜尋當前類別商品...">
+            <span id="searchResult"></span>
+            <button id="clearSearch" class="btn btn-outline-secondary">清除搜尋</button>
+        </div>
         <div id="productContainer" class="row mt-4">
             <!-- 商品將在這裡動態加載 -->
         </div>
@@ -89,6 +113,7 @@
         const apiKey = 'AIzaSyDPkSAu7kurckNYvFBSkIdep27tITS4Pok';
         let currentSheet = '';
         let allProducts = {};
+        let currentSearchTerm = '';
 
         // 處理圖片 URL
         function getImageUrl(url) {
@@ -126,7 +151,7 @@
                     const sheetPromises = data.sheets.map((sheet, index) => {
                         const li = document.createElement('li');
                         li.className = 'nav-item';
-                        li.innerHTML = `<a class="nav-link ${index === 0 ? 'active' : ''}" data-sheet="${sheet.properties.title}">${sheet.properties.title} (載入中...)</a>`;
+                        li.innerHTML = `<a class="nav-link" data-sheet="${sheet.properties.title}">${sheet.properties.title} (載入中...)</a>`;
                         tabsContainer.appendChild(li);
                         return loadProducts(sheet.properties.title, true);
                     });
@@ -137,6 +162,8 @@
                                 document.querySelectorAll('#sheetTabs .nav-link').forEach(t => t.classList.remove('active'));
                                 e.target.classList.add('active');
                                 currentSheet = e.target.getAttribute('data-sheet');
+                                currentSearchTerm = '';
+                                document.getElementById('searchInput').value = '';
                                 displayProducts(allProducts[currentSheet]);
                             });
                         });
@@ -198,7 +225,17 @@
         function displayProducts(products) {
             const container = document.getElementById('productContainer');
             container.innerHTML = '';
-            products.forEach(product => {
+            const filteredProducts = products.filter(product => 
+                product.title.toLowerCase().includes(currentSearchTerm.toLowerCase())
+            );
+            
+            if (filteredProducts.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center"><h3>尚無此商品</h3></div>';
+                updateSearchResult(0);
+                return;
+            }
+
+            filteredProducts.forEach(product => {
                 const imageUrl = getImageUrl(product.imageUrl);
                 const specOption = [product.spec, product.option].filter(Boolean).join(' | ');
                 const productHtml = `
@@ -215,7 +252,7 @@
                                     $${product.price} | 庫存: <span class="stock-number">${product.stock}</span>
                                 </p>
                                 <div class="d-flex justify-content-between">
-                                    ${product.detailLink ? `<a href="${product.detailLink}" class="btn btn-primary btn-sm" target="_blank">點我看圖</a>` : ''}
+                                    ${product.detailLink ? `<a href="${product.detailLink}" class="btn btn-primary btn-sm" target="_blank">看圖</a>` : ''}
                                     ${product.originalPostLink ? `<a href="${product.originalPostLink}" class="btn btn-secondary btn-sm" target="_blank">原始貼文</a>` : ''}
                                 </div>
                             </div>
@@ -224,6 +261,31 @@
                 `;
                 container.innerHTML += productHtml;
             });
+            updateSearchResult(filteredProducts.length);
+        }
+
+        // 更新搜尋結果
+        function updateSearchResult(count) {
+            const searchResult = document.getElementById('searchResult');
+            if (currentSearchTerm) {
+                searchResult.style.display = 'inline-block';
+                searchResult.textContent = `${count}個`;
+            } else {
+                searchResult.style.display = 'none';
+            }
+        }
+
+        // 搜尋功能
+        function searchProducts() {
+            currentSearchTerm = document.getElementById('searchInput').value;
+            displayProducts(allProducts[currentSheet]);
+        }
+
+        // 清除搜尋
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            currentSearchTerm = '';
+            displayProducts(allProducts[currentSheet]);
         }
 
         // 回到頂部功能
@@ -237,9 +299,13 @@
             loadAllSheets();
 
             document.getElementById('refreshButton').addEventListener('click', () => {
+                const activeTab = document.querySelector('#sheetTabs .nav-link.active');
+                currentSheet = activeTab ? activeTab.getAttribute('data-sheet') : '';
                 loadAllSheets();
             });
 
+            document.getElementById('searchInput').addEventListener('input', searchProducts);
+            document.getElementById('clearSearch').addEventListener('click', clearSearch);
             document.getElementById('backToTop').addEventListener('click', topFunction);
         });
     </script>
