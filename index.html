@@ -305,7 +305,7 @@
                                 <h5 class="card-title">${product.title}</h5>
                                 ${specOption ? `<p class="card-text">${specOption}</p>` : ''}
                                 <p class="card-text">
-                                    $${product.price} | 庫存: <span class="stock-number">${product.stock}</span>
+                                    $${product.price} | 剩餘: <span class="stock-number">${product.stock}</span>
                                 </p>
                                 <div class="d-flex justify-content-between">
                                     ${product.detailLink ? `<a href="${getDetailLink(product.detailLink)}" class="btn btn-primary btn-sm" target="_blank">看圖</a>` : ''}
