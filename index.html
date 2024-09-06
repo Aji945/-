@@ -68,9 +68,16 @@
             if (!url) return '/api/placeholder/400/400';
             
             // 處理 Google Drive 圖片 URL 格式
-            if (url.includes('drive.google.com/open?id=')) {
-                const fileId = url.split('id=')[1].split('&')[0];
-                return `https://drive.google.com/uc?export=view&id=${fileId}`;
+            if (url.includes('drive.google.com')) {
+                let fileId;
+                if (url.includes('/open?id=')) {
+                    fileId = url.split('/open?id=')[1].split('&')[0];
+                } else if (url.includes('/file/d/')) {
+                    fileId = url.split('/file/d/')[1].split('/')[0];
+                }
+                if (fileId) {
+                    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+                }
             }
             
             return url;
@@ -79,7 +86,8 @@
         // 處理詳情鏈接
         function getDetailLink(url) {
             if (url.includes('drive.google.com/open?id=')) {
-                return url.replace('open?', 'drive/folders/');
+                const fileId = url.split('id=')[1].split('&')[0];
+                return `https://drive.google.com/file/d/${fileId}/view`;
             }
             return url;
         }
@@ -165,7 +173,7 @@
                             <div class="card-body">
                                 <h5 class="card-title">${product.name}</h5>
                                 <p class="card-text">
-                                    價格: $${product.price} | 庫存: <span class="stock-number">${product.quantity}</span>
+                                    $${product.price} | 庫存: <span class="stock-number">${product.quantity}</span>
                                 </p>
                                 <a href="${getDetailLink(product.driveLink)}" class="btn btn-primary" target="_blank">查看詳情</a>
                             </div>
