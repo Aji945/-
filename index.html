@@ -25,24 +25,30 @@
             flex: 1;
             max-width: 200px;
         }
-        #backToTop {
+        
+        #backToTop, #infoButton {
             position: fixed;
-            bottom: 20px;
             right: 20px;
             display: block;
             z-index: 99;
             font-size: 18px;
             border: none;
             outline: none;
-            background-color: #0d6efd;
             color: white;
             cursor: pointer;
             padding: 15px;
             border-radius: 50%;
         }
+
+        #backToTop {
+            bottom: 20px;
+            background-color: #0d6efd;
+        }
+
         #backToTop:hover {
             background-color: #0b5ed7;
         }
+
         .product-image {
             width: 100%;
             height: 200px;
@@ -125,6 +131,47 @@
         .scroll-indicator:hover {
             background: rgba(255, 255, 255, 0.9);
         }
+
+        #infoButton {
+            bottom: 80px; /* 位於回到頂部按鈕上方 */
+            background-color: #6c757d; /* 灰色底色 */
+        }
+
+        #infoButton:hover {
+            background-color: #5a6268; /* 稍深的灰色用於懸停效果 */
+        }
+
+        #infoModal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -158,6 +205,16 @@
     </div>
 
     <button id="backToTop" title="回到頂部"><i class="fas fa-arrow-up"></i></button>
+    <button id="infoButton" title="說明"><i class="fas fa-question"></i></button>
+
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>說明</h2>
+            <p>1. 現貨可現場看貨、購買</p>
+            <p>2. 現場同步出售，喜歡可先預訂，以免多跑一趟</p>
+        </div>
+    </div>
 
     <script>
         const sheetId = '1otQJRi_YT5TUyWSwVdcO_k6qQ99Cgg9ngVzLRI9pVwo';
@@ -380,11 +437,29 @@
             document.getElementById('clearSearch').addEventListener('click', clearSearch);
             document.getElementById('backToTop').addEventListener('click', topFunction);
 
-            // 新增的商品類別相關事件監聽器
             document.querySelector('.scroll-indicator.left').addEventListener('click', () => scrollTabs('left'));
             document.querySelector('.scroll-indicator.right').addEventListener('click', () => scrollTabs('right'));
             document.querySelector('.tabs-wrapper').addEventListener('scroll', updateScrollIndicators);
             window.addEventListener('resize', updateScrollIndicators);
+
+            // 新增的說明模態框相關代碼
+            const modal = document.getElementById('infoModal');
+            const infoBtn = document.getElementById('infoButton');
+            const closeBtn = document.getElementsByClassName('close')[0];
+            
+            infoBtn.onclick = function() {
+                modal.style.display = 'block';
+            }
+            
+            closeBtn.onclick = function() {
+                modal.style.display = 'none';
+            }
+            
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            }
         });
     </script>
 </body>
