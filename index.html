@@ -1,3 +1,7 @@
+// 警告：此API密鑰已在Google Cloud Platform中設置了HTTP引用者限制。
+// 它只能在授權的域名上使用。請勿嘗試在其他地方使用此密鑰。
+// 團購劃時代功能，你們只能跟在後面抄，看著我們努力創新吧。
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -218,8 +222,20 @@
     </div>
 
     <script>
-        const sheetId = '1otQJRi_YT5TUyWSwVdcO_k6qQ99Cgg9ngVzLRI9pVwo';
-        const apiKey = `AIzaSyDPkSAu7ku${'rckNYvFBSkIdep27tITS4Pok'}`;
+        const encryptedSheetId = 'owvP9IRLzxBM_1otQJRi_YT5TUyWSwVdcO_k6qQ99Cgg9ngV';
+        const encryptedApiKey = 'AIzaSyDPkSAu7ku${"rckNYvFBSkIdep27tITS4Pok"}';
+
+        function decryptSheetId(encrypted) {
+            return encrypted.split('_')[1].split('').reverse().join('');
+        }
+
+        function decryptApiKey(encrypted) {
+            return encrypted.replace('${"rckNYvFBSkIdep27tITS4Pok"}', '');
+        }
+
+        const sheetId = decryptSheetId(encryptedSheetId);
+        const apiKey = decryptApiKey(encryptedApiKey);
+
         let currentSheet = '';
         let allProducts = {};
         let currentSearchTerm = '';
