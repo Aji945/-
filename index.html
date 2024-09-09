@@ -219,15 +219,18 @@
 
     <script>
             const encodedSheetId = 'MW90UUpSaV9ZVDVUVXlXU3dWZGNPX2s2cVE5OUNnZzluZ1Z6TFJJOXBWd28=';
-            const encodedApiKey = 'QWl6YVN5RFBrU0F1N2t1cmNrTll2RkJTa0lkZXAyN2tJVFMyUG9r';
+                                 
 
-            // Base64 解碼
+            const encodedApiKey = 'QUl6YVN5RFBrU0F1N2t1cmNrTll2RkJTa0lkZXAyN3RJVFM0UG9r';
+                   
+
+           
             const sheetId = atob(encodedSheetId);
             const apiKey = atob(encodedApiKey);
 
-        let currentSheet = '';
-        let allProducts = {};
-        let currentSearchTerm = '';
+            let currentSheet = '';
+            let allProducts = {};
+            let currentSearchTerm = '';
 
         function getImageUrl(url) {
             if (!url) return null;
