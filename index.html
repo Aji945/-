@@ -218,16 +218,13 @@
     </div>
 
     <script>
-    const encodedSheetId = 'MW90UUpSaV9ZVDVUVXlXU3dWZGNPX2s2c1FROTVDZ2c5bmdWekxSSTlwVndv';
-    const encodedApiKey = 'QWl6YVN5RFBrU0F1N2t1cmNrTll2RkJTa0lkZXAyN2tJVFMyUG9r';
+            const encodedSheetId = 'MW90UUpSaV9ZVDVUVXlXU3dWZGNPX2s2cVE5OUNnZzluZ1Z6TFJJOXBWd28=';
+            const encodedApiKey = 'QWl6YVN5RFBrU0F1N2t1cmNrTll2RkJTa0lkZXAyN2tJVFMyUG9r';
 
-    // Base64 解碼
-    const sheetId = atob(encodedSheetId);
-    const apiKey = atob(encodedApiKey);
+            // Base64 解碼
+            const sheetId = atob(encodedSheetId);
+            const apiKey = atob(encodedApiKey);
 
-    console.log('Decoded Sheet ID:', sheetId);
-    console.log('Decoded API Key:', apiKey);
-    
         let currentSheet = '';
         let allProducts = {};
         let currentSearchTerm = '';
