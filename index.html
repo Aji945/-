@@ -223,23 +223,23 @@
     </div>
 
     <script>
-        const encryptedSheetId = 'owvP9IRLzxBM_1otQJRi_YT5TUyWSwVdcO_k6qQ99Cgg9ngV';
-        const encryptedApiKey = 'AIzaSyDPkSAu7ku${"rckNYvFBSkIdep27tITS4Pok"}';
+    const obfuscatedSheetId = 'owvP9IRLzxBM_1otQJRi_YT5TUyWSwVdcO_k6qQ99Cgg9ngVzLRI9pVwo';
+    const obfuscatedApiKey = 'AIzaSyDPkSAu7ku${"rckNYvFBSkIdep27tITS4Pok"}';
 
-        function decryptSheetId(encrypted) {
-            return encrypted.split('_')[1].split('').reverse().join('');
-        }
+    function deobfuscateSheetId(obfuscated) {
+        return obfuscated.split('_')[1];
+    }
 
-        function decryptApiKey(encrypted) {
-            return encrypted.replace('${"rckNYvFBSkIdep27tITS4Pok"}', '');
-        }
+    function deobfuscateApiKey(obfuscated) {
+        return obfuscated.replace('${"rckNYvFBSkIdep27tITS4Pok"}', 'rckNYvFBSkIdep27tITS4Pok');
+    }
 
-        const sheetId = decryptSheetId(encryptedSheetId);
-        const apiKey = decryptApiKey(encryptedApiKey);
+    const sheetId = deobfuscateSheetId(obfuscatedSheetId);
+    const apiKey = deobfuscateApiKey(obfuscatedApiKey);
 
-        let currentSheet = '';
-        let allProducts = {};
-        let currentSearchTerm = '';
+    let currentSheet = '';
+    let allProducts = {};
+    let currentSearchTerm = '';
 
         function getImageUrl(url) {
             if (!url) return null;
