@@ -324,44 +324,45 @@
                 .catch(error => console.error('Error loading sheets:', error));
         }
 
-        function loadProducts(sheetName, updateTabOnly = false) {
-            return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A:H?key=${apiKey}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.values && data.values.length > 1) {
-                        const products = data.values.slice(1)
-                            .map(row => {
-                                return {
-                                    title: row[0] || '',
-                                    spec: row[1] || '',
-                                    option: row[2] || '',
-                                    price: row[3] || '',
-                                    stock: row[4] || '',
-                                    imageUrl: row[5] || '',
-                                    detailLink: row[6] || '',
-                                    originalPostLink: row[7] || ''
-                                };
-                            });
+function loadProducts(sheetName, updateTabOnly = false) {
+    return fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A:I?key=${apiKey}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.values && data.values.length > 1) {
+                const products = data.values.slice(1)
+                    .filter(row => row[8] !== 'X') // Filter out rows with 'X' in column I
+                    .map(row => {
+                        return {
+                            title: row[0] || '',
+                            spec: row[1] || '',
+                            option: row[2] || '',
+                            price: row[3] || '',
+                            stock: row[4] || '',
+                            imageUrl: row[5] || '',
+                            detailLink: row[6] || '',
+                            originalPostLink: row[7] || ''
+                        };
+                    });
 
-                        allProducts[sheetName] = products;
+                allProducts[sheetName] = products;
 
-                        const tab = document.querySelector(`#sheetTabs .nav-link[data-sheet="${sheetName}"]`);
-                        if (tab) {
-                            tab.textContent = `${sheetName}(${products.length})`;
-                        }
+                const tab = document.querySelector(`#sheetTabs .nav-link[data-sheet="${sheetName}"]`);
+                if (tab) {
+                    tab.textContent = `${sheetName}(${products.length})`;
+                }
 
-                        if (!updateTabOnly && sheetName === currentSheet) {
-                            displayProducts(products);
-                        }
-                    } else {
-                        allProducts[sheetName] = [];
-                        if (!updateTabOnly && sheetName === currentSheet) {
-                            displayProducts([]);
-                        }
-                    }
-                })
-                .catch(error => console.error('Error loading products:', error));
-        }
+                if (!updateTabOnly && sheetName === currentSheet) {
+                    displayProducts(products);
+                }
+            } else {
+                allProducts[sheetName] = [];
+                if (!updateTabOnly && sheetName === currentSheet) {
+                    displayProducts([]);
+                }
+            }
+        })
+        .catch(error => console.error('Error loading products:', error));
+}
 
         function displayProducts(products) {
             const container = document.getElementById('productContainer');
